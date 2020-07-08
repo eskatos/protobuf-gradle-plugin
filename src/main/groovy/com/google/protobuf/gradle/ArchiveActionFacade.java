@@ -33,6 +33,7 @@ import org.gradle.api.file.FileTree;
 import org.gradle.api.internal.file.FileOperations;
 
 import javax.inject.Inject;
+import java.lang.reflect.Method;
 
 public interface ArchiveActionFacade {
 
@@ -67,12 +68,22 @@ public interface ArchiveActionFacade {
 
         @Override
         public FileTree zipTree(Object path) {
-            return getFileOperations().zipTree(path);
+            return reflectivelyInvoke("zipTree", path);
         }
 
         @Override
         public FileTree tarTree(Object path) {
-            return getFileOperations().tarTree(path);
+            return reflectivelyInvoke("tarTree", path);
+        }
+
+        private FileTree reflectivelyInvoke(String method, Object path) {
+            try {
+                Method zipTree = FileOperations.class.getMethod(method, Object.class);
+                Object result = zipTree.invoke(getFileOperations(), path);
+                return (FileTree) result;
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
         }
     }
 }
